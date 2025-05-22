@@ -1,6 +1,7 @@
 import { editor, shell, system } from "@silverbulletmd/silverbullet/syscalls";
 
-const _gitlabRegex = /https:\/\/([^:]+):([^@]+)@gitlab\.com\/([^\/]+)\/([^\/\.]+)\.git/;
+const _gitlabRegex =
+  /https:\/\/([^:]+):([^@]+)@gitlab\.com\/([^\/]+)\/([^\/\.]+)\.git/;
 const _githubRegex = /https:\/\/([^@]+)@github\.com\/([^\/]+)\/([^\/\.]+)\.git/;
 
 export async function commit(message?: string) {
@@ -48,8 +49,10 @@ async function sync() {
 }
 
 async function initRepo(pieces: string[], name: string, email: string) {
-  const url = pieces.join('/') + '.git';
-  await editor.flashNotification('Now going to clone the project, this may take some time.');
+  const url = pieces.join("/") + ".git";
+  await editor.flashNotification(
+    "Now going to clone the project, this may take some time.",
+  );
 
   await shell.run("mkdir", ["-p", "_checkout"]);
   await shell.run("git", ["clone", url, "_checkout"]);
@@ -87,7 +90,7 @@ export async function githubCloneCommand() {
 }
 
 export async function gitlabCloneCommand() {
-  const url = await editor.prompt('Gitlab project URL:');
+  const url = await editor.prompt("Gitlab project URL:");
   if (!url) {
     return;
   }
@@ -95,7 +98,7 @@ export async function gitlabCloneCommand() {
   if (!userName) {
     return;
   }
-  const token = await editor.prompt('Gitlab token:');
+  const token = await editor.prompt("Gitlab token:");
   if (!token) {
     return;
   }
@@ -108,7 +111,7 @@ export async function gitlabCloneCommand() {
     return;
   }
 
-  const pieces = url.split('/');
+  const pieces = url.split("/");
   pieces[2] = `${userName}:${token}@${pieces[2]}`;
 
   await initRepo(pieces, name, email);
@@ -116,6 +119,7 @@ export async function gitlabCloneCommand() {
 
 export async function autoCommit() {
   const git = await system.getSpaceConfig("git", {});
+  console.log({ "Git config": git });
   if (git.autoCommitMinutes) {
     console.log("Triggered auto commit with config", git);
     const currentMinutes = new Date().getMinutes();
@@ -138,7 +142,7 @@ function _extractGithubUrlInfo(url: string): [string] | null {
   return [
     token,
     organization,
-    repository
+    repository,
   ];
 }
 
@@ -151,7 +155,7 @@ function _extractGitLabUrlInfo(url: string): [string] | null {
     username,
     token,
     organization,
-    repository
+    repository,
   ];
 }
 
@@ -159,26 +163,28 @@ function _replaceGitToken(url: string, newToken: string): string {
   let newUrl = "";
 
   if (_gitlabRegex.test(url)) {
-    const info = _extractGitLabUrlInfo(url)
-    newUrl = `https://${info[0]}:${newToken}@gitlab.com/${info[2]}/${info[3]}.git`;
+    const info = _extractGitLabUrlInfo(url);
+    newUrl = `https://${info[0]}:${newToken}@gitlab.com/${info[2]}/${
+      info[3]
+    }.git`;
   }
   if (_githubRegex.test(url)) {
     const info = _extractGithubUrlInfo(url);
     newUrl = `https://${newToken}@github.com/${info[1]}/${info[2]}.git`;
   }
-  return newUrl
+  return newUrl;
 }
 
 export async function gitReplaceTokenCommand() {
-
   const newToken = await editor.prompt("Enter new token:");
   if (!newToken) {
     return;
   }
 
-  const url = (await shell.run("git", ["remote", "get-url", "origin"])).stdout.trim();
+  const url = (await shell.run("git", ["remote", "get-url", "origin"])).stdout
+    .trim();
 
-  const newUrl = _replaceGitToken(url, newToken)
+  const newUrl = _replaceGitToken(url, newToken);
 
   if (newUrl.trim() == "") {
     await editor.flashNotification("Token replaced failed!");
